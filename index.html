@@ -35,6 +35,21 @@
       --radius-modal: 26px;
       --gap: 20px;
       --ease-apple: cubic-bezier(0.28, 0.11, 0.32, 1);
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    @keyframes blurFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+        filter: blur(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+      }
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -88,6 +103,7 @@
       letter-spacing: 0.02em;
       color: var(--ink-muted);
       margin-bottom: 10px;
+      animation: blurFadeUp 0.62s var(--ease-out) 0.04s both;
     }
 
     .hero h1 {
@@ -97,6 +113,7 @@
       letter-spacing: -0.025em;
       line-height: 1.08;
       color: var(--ink);
+      animation: blurFadeUp 0.68s var(--ease-out) 0.10s both;
     }
 
     .hero p {
@@ -107,6 +124,7 @@
       line-height: 1.48;
       letter-spacing: -0.01em;
       color: var(--ink-muted);
+      animation: blurFadeUp 0.68s var(--ease-out) 0.16s both;
     }
 
     /* Clean Apple Filter Bar (Author Pills + Segmented Status Track) */
@@ -117,6 +135,7 @@
       justify-content: space-between;
       gap: 12px 18px;
       margin-bottom: 46px;
+      animation: blurFadeUp 0.68s var(--ease-out) 0.22s both;
     }
 
     .filter-group {
@@ -143,7 +162,15 @@
       color: var(--ink-secondary);
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.2s var(--ease-apple), color 0.2s var(--ease-apple), border-color 0.2s var(--ease-apple);
+      transition:
+        transform 0.16s var(--ease-out),
+        background-color 0.2s var(--ease-apple),
+        color 0.2s var(--ease-apple),
+        border-color 0.2s var(--ease-apple);
+    }
+
+    .pill-btn:active {
+      transform: scale(0.96);
     }
 
     .pill-btn:hover {
@@ -206,6 +233,7 @@
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 22px;
+      animation: blurFadeUp 0.65s var(--ease-out) 0.26s both;
     }
 
     .section-head h2 {
@@ -256,16 +284,39 @@
       box-shadow: var(--specular);
       color: var(--ink);
       cursor: pointer;
+      opacity: 0;
+      transform: translateY(18px) scale(0.978);
+      filter: blur(4px);
       transition:
-        transform 0.25s var(--ease-apple),
+        opacity 0.56s var(--ease-out),
+        transform 0.56s var(--ease-out),
+        filter 0.56s var(--ease-out),
         background-color 0.25s var(--ease-apple),
         border-color 0.25s var(--ease-apple);
     }
 
-    .matte-card:hover {
+    .matte-card.is-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+
+    .matte-card.is-settled {
+      transition:
+        transform 0.24s var(--ease-out),
+        background-color 0.22s var(--ease-apple),
+        border-color 0.22s var(--ease-apple);
+    }
+
+    .matte-card.is-visible:hover {
       transform: translateY(-2px);
       background: var(--surface-matte-hover);
       border-color: var(--hairline-hover);
+    }
+
+    .matte-card.is-visible:active {
+      transform: scale(0.985);
+      transition-duration: 0.14s;
     }
 
     .matte-card:focus-visible {
@@ -380,6 +431,7 @@
       box-shadow: var(--specular);
       color: var(--ink-muted);
       font-size: 15px;
+      animation: blurFadeUp 0.45s var(--ease-out) both;
     }
 
     code {
@@ -395,14 +447,24 @@
       background: rgba(0, 0, 0, 0.72);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
       z-index: 60;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity 0.24s var(--ease-out),
+        visibility 0.24s var(--ease-out);
     }
 
-    .modal-backdrop.open { display: flex; }
+    .modal-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
 
     .modal-panel {
       width: 100%;
@@ -416,6 +478,16 @@
       box-shadow: 0 32px 80px rgba(0, 0, 0, 0.75), var(--specular);
       border-radius: var(--radius-modal);
       padding: 30px 32px;
+      transform: scale(0.96) translateY(10px);
+      filter: blur(4px);
+      transition:
+        transform 0.34s var(--ease-drawer),
+        filter 0.34s var(--ease-drawer);
+    }
+
+    .modal-backdrop.open .modal-panel {
+      transform: scale(1) translateY(0);
+      filter: blur(0);
     }
 
     .modal-head {
@@ -529,8 +601,33 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .matte-card, .pill-btn { transition: none; }
       html { scroll-behavior: auto; }
+      .hero-eyebrow, .hero h1, .hero p, .filters-wrap, .section-head, .empty-box {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+      }
+      .matte-card {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: background-color 0.15s ease, border-color 0.15s ease !important;
+      }
+      .pill-btn, .modal-backdrop, .modal-panel, .modal-close {
+        transition: none !important;
+        transform: none !important;
+        filter: none !important;
+      }
+    }
+
+    @media print {
+      .hero-eyebrow, .hero h1, .hero p, .filters-wrap, .section-head, .matte-card {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        animation: none !important;
+      }
     }
   </style>
 </head>
@@ -852,10 +949,80 @@
       return visible.length;
     }
 
-    function renderAll() {
+    let cardObserver = null;
+    let settleTimers = [];
+
+    function clearRevealState() {
+      if (cardObserver) {
+        cardObserver.disconnect();
+        cardObserver = null;
+      }
+      settleTimers.forEach(clearTimeout);
+      settleTimers = [];
+    }
+
+    function revealCardBatch(batch, baseDelayMs, stepMs) {
+      batch.forEach((el, idx) => {
+        if (el.classList.contains("is-visible")) return;
+        const delay = baseDelayMs + Math.min(idx, 8) * stepMs;
+        el.style.transitionDelay = delay + "ms";
+        el.classList.add("is-visible");
+        if (cardObserver) cardObserver.unobserve(el);
+        const timer = setTimeout(() => {
+          el.style.transitionDelay = "";
+          el.classList.add("is-settled");
+        }, delay + 600);
+        settleTimers.push(timer);
+      });
+    }
+
+    function flushCardsAboveFold() {
+      const hidden = Array.from(document.querySelectorAll(".matte-card:not(.is-visible)"));
+      if (!hidden.length) return;
+      const vh = window.innerHeight || 900;
+      const ready = hidden.filter(el => el.getBoundingClientRect().top < vh - 12);
+      if (ready.length) revealCardBatch(ready, 0, 50);
+    }
+
+    function observeCards(initialBaseDelayMs, stepMs) {
+      clearRevealState();
+      const cards = Array.from(document.querySelectorAll(".matte-card"));
+      if (!cards.length) return;
+
+      const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduced || !("IntersectionObserver" in window)) {
+        cards.forEach(el => el.classList.add("is-visible", "is-settled"));
+        return;
+      }
+
+      let isFirstBatch = true;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          cardObserver = new IntersectionObserver(entries => {
+            const incoming = entries
+              .filter(e => e.isIntersecting || e.boundingClientRect.top < window.innerHeight)
+              .map(e => e.target)
+              .sort((a, b) => cards.indexOf(a) - cards.indexOf(b));
+
+            if (!incoming.length) return;
+            const baseDelay = isFirstBatch ? initialBaseDelayMs : 0;
+            isFirstBatch = false;
+            revealCardBatch(incoming, baseDelay, stepMs);
+          }, {
+            rootMargin: "0px 0px -20px 0px",
+            threshold: 0.05
+          });
+
+          cards.forEach(card => cardObserver.observe(card));
+        });
+      });
+    }
+
+    function renderAll(isFilterChange = false) {
       const hCount = renderHistory();
       const fCount = renderFuture(hCount);
       document.getElementById("emptyGlobal").style.display = (hCount + fCount === 0) ? "block" : "none";
+      observeCards(isFilterChange ? 0 : 180, isFilterChange ? 45 : 55);
     }
 
     function getNavPool() {
@@ -895,7 +1062,7 @@
       if (!btn) return;
       filterAuthor = btn.dataset.author;
       document.querySelectorAll("#authorFilters [data-author]").forEach(b => b.classList.toggle("active", b === btn));
-      renderAll();
+      renderAll(true);
     });
 
     document.getElementById("statusFilters").addEventListener("click", e => {
@@ -903,7 +1070,7 @@
       if (!btn) return;
       filterStatus = btn.dataset.status;
       document.querySelectorAll("#statusFilters [data-status]").forEach(b => b.classList.toggle("active", b === btn));
-      renderAll();
+      renderAll(true);
     });
 
     document.getElementById("modalPrev").addEventListener("click", () => {
@@ -925,8 +1092,13 @@
     document.addEventListener("keydown", e => {
       if (e.key === "Escape") closeDetail();
     });
+    window.addEventListener("scroll", flushCardsAboveFold, { passive: true });
+    window.addEventListener("resize", flushCardsAboveFold, { passive: true });
+    window.addEventListener("beforeprint", () => {
+      document.querySelectorAll(".matte-card").forEach(el => el.classList.add("is-visible", "is-settled"));
+    });
 
-    renderAll();
+    renderAll(false);
   </script>
 </body>
 </html>
