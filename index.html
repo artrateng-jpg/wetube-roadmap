@@ -282,11 +282,6 @@
       border-color: rgba(255, 255, 255, 0.08);
     }
 
-    .matte-card.is-plan {
-      background: rgba(16, 16, 18, 0.64);
-      border-color: rgba(255, 255, 255, 0.065);
-    }
-
     /* Top line: Date + Minimal Status */
     .card-top {
       display: flex;
@@ -311,7 +306,6 @@
 
     .st-icon-done { color: #30d158; }
     .st-icon-wip  { color: #ffd60a; }
-    .st-icon-plan { color: #8e8e93; }
 
     /* Middle: Clean Apple Title */
     .card-title {
@@ -549,7 +543,7 @@
       <h1>История развития и Roadmap</h1>
       <p>
         Кто, когда и что реализовал или переработал: от первого макета до актуальной сборки
-        08.11 и дальнейших планов. Нажмите любую карточку, чтобы увидеть подробности.
+        08.11 и текущих задач. Нажмите любую карточку, чтобы увидеть подробности.
       </p>
     </header>
 
@@ -567,7 +561,6 @@
         <button type="button" class="pill-btn active" data-status="all">Все статусы</button>
         <button type="button" class="pill-btn" data-status="done">✓ Готово</button>
         <button type="button" class="pill-btn" data-status="wip">◐ В работе</button>
-        <button type="button" class="pill-btn" data-status="plan">○ Запланировано</button>
       </div>
     </section>
 
@@ -585,11 +578,11 @@
       <div class="matte-grid" id="historyTimeline"></div>
     </section>
 
-    <!-- Section 2: Separate Future & Planned Work -->
+    <!-- Section 2: Current In-Progress Work -->
     <section id="futureSection" class="future-section">
       <div class="section-head">
-        <h2>В работе и запланировано</h2>
-        <span class="section-meta" id="futureCountLabel">Сроки и исполнители без подтверждения не назначались</span>
+        <h2>В работе</h2>
+        <span class="section-meta" id="futureCountLabel">3 задачи</span>
       </div>
       <div id="futureTimeline"></div>
     </section>
@@ -628,9 +621,8 @@
     };
 
     const statusMeta = {
-      done: { icon: "✓", text: "Готово",        cls: "st-icon-done" },
-      wip:  { icon: "◐", text: "В работе",      cls: "st-icon-wip" },
-      plan: { icon: "○", text: "Запланировано", cls: "st-icon-plan" }
+      done: { icon: "✓", text: "Готово",   cls: "st-icon-done" },
+      wip:  { icon: "◐", text: "В работе", cls: "st-icon-wip" }
     };
 
     // Chronological milestones (3-col Apple Bento math: 1+1+1, 2+1, 1+2, 2+1, 2+1 = 11 cards, zero holes)
@@ -747,7 +739,7 @@
       }
     ];
 
-    // Separate In-Progress & Planned items
+    // Current In-Progress work
     const futureEvents = [
       {
         id: "w1",
@@ -775,42 +767,6 @@
         title: "Дневники практики и сдача проекта",
         kind: "Сдача в пятницу",
         summary: "Подготовка к сдаче командного проекта в пятницу и финальное оформление дневников учебной практики."
-      },
-      {
-        id: "p1",
-        date: "Срок не назначен",
-        author: "unknown",
-        status: "plan",
-        title: "Скачивание видеофайлов",
-        kind: "Зафиксировано в плане",
-        summary: "В плане развития контента предусмотрена разработка скачивания видеофайлов; в текущей сборке механизм скачивания ещё не реализован."
-      },
-      {
-        id: "p2",
-        date: "Срок не назначен",
-        author: "unknown",
-        status: "plan",
-        title: "Кнопка «Поделиться / пригласить»",
-        kind: "Зафиксировано в плане",
-        summary: "Отмечена статусом «Планируется» в документе контента проекта; в интерфейсе и API текущей сборки функция пока не реализована."
-      },
-      {
-        id: "p3",
-        date: "Срок не назначен",
-        author: "unknown",
-        status: "plan",
-        title: "Удаление видео в админке",
-        kind: "Заявлено на Use-Case 09.11",
-        summary: "На Use-Case диаграмме для администратора заявлены управление пользователями и удаление видео, а для гостя — подтверждение email."
-      },
-      {
-        id: "p4",
-        date: "График 09.11–22.12",
-        author: "unknown",
-        status: "plan",
-        title: "Postman и сдача практики",
-        kind: "Учебный график",
-        summary: "Запланированы тестирование API через Postman, доработка интеграции, проверка стабильности и подготовка к зачёту по учебному графику 09.11–22.12."
       }
     ];
 
@@ -829,7 +785,7 @@
       const au = authorsMeta[ev.author];
       const st = statusMeta[ev.status];
       const spanCls = allowSpan && ev.span === 2 ? "span-2" : "";
-      const stateCls = ev.status === "wip" ? "is-future" : ev.status === "plan" ? "is-future is-plan" : "";
+      const stateCls = ev.status === "wip" ? "is-future" : "";
 
       return `
         <button type="button" class="matte-card ${spanCls} ${stateCls}" onclick="openDetail('${ev.id}')">
@@ -878,42 +834,21 @@
       if (!visible.length) {
         section.style.display = "none";
         container.innerHTML = "";
-        countEl.textContent = `0 задач`;
+        countEl.textContent = `0 из ${futureEvents.length}`;
         return 0;
       }
 
       section.style.display = "";
       section.classList.toggle("is-solo", histVisibleCount === 0);
-      countEl.textContent = `${visible.length} задач · сроки и исполнители без подтверждения не назначались`;
+      countEl.textContent = `${visible.length} из ${futureEvents.length}`;
 
-      const wipItems = visible.filter(e => e.status === "wip");
-      const planItems = visible.filter(e => e.status === "plan");
-      const parts = [];
-
-      if (wipItems.length) {
-        const cols = Math.min(3, wipItems.length);
-        const cls = cols === 3 ? "" : `cols-${cols}`;
-        parts.push(`
-          <div class="future-subhead">◐ В работе (${wipItems.length})</div>
-          <div class="matte-grid ${cls}">
-            ${wipItems.map(ev => createCardHtml(ev, false)).join("")}
-          </div>
-        `);
-      }
-
-      if (planItems.length) {
-        // 4 planned items form a calm 2x2 grid; fewer items adapt cleanly
-        const cols = planItems.length === 4 ? 2 : Math.min(3, planItems.length);
-        const cls = cols === 3 ? "" : `cols-${cols}`;
-        parts.push(`
-          <div class="future-subhead">○ Запланировано (${planItems.length})</div>
-          <div class="matte-grid ${cls}">
-            ${planItems.map(ev => createCardHtml(ev, false)).join("")}
-          </div>
-        `);
-      }
-
-      container.innerHTML = parts.join("");
+      const cols = Math.min(3, visible.length);
+      const cls = cols === 3 ? "" : `cols-${cols}`;
+      container.innerHTML = `
+        <div class="matte-grid ${cls}">
+          ${visible.map(ev => createCardHtml(ev, false)).join("")}
+        </div>
+      `;
       return visible.length;
     }
 
