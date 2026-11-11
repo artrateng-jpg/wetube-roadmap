@@ -270,6 +270,7 @@
       text-align: left;
       font-family: inherit;
       position: relative;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -293,6 +294,54 @@
         filter 0.56s var(--ease-out),
         background-color 0.25s var(--ease-apple),
         border-color 0.25s var(--ease-apple);
+    }
+
+    .matte-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .matte-card::before,
+    .matte-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.28s var(--ease-out);
+      z-index: 0;
+    }
+
+    /* Subtle ~5% white spotlight following the cursor over frosted surface */
+    .matte-card::before {
+      background: radial-gradient(
+        420px circle at var(--mx, 50%) var(--my, 0%),
+        rgba(255, 255, 255, 0.055),
+        transparent 65%
+      );
+    }
+
+    /* Specular rim highlight along the 1px border edge under cursor */
+    .matte-card::after {
+      padding: 1px;
+      background: radial-gradient(
+        260px circle at var(--mx, 50%) var(--my, 0%),
+        rgba(255, 255, 255, 0.22),
+        transparent 70%
+      );
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .matte-card.is-visible:hover::before,
+      .matte-card.is-visible:hover::after {
+        opacity: 1;
+      }
     }
 
     .matte-card.is-visible {
@@ -576,6 +625,17 @@
       cursor: default;
     }
 
+    .modal-swap {
+      transition:
+        opacity 0.16s var(--ease-out),
+        transform 0.16s var(--ease-out);
+    }
+
+    .modal-swap.is-swapping {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
     /* Responsive Breakpoints */
     @media (max-width: 960px) {
       .matte-grid, .matte-grid.cols-2 {
@@ -614,7 +674,10 @@
         filter: none !important;
         transition: background-color 0.15s ease, border-color 0.15s ease !important;
       }
-      .pill-btn, .modal-backdrop, .modal-panel, .modal-close {
+      .matte-card::before, .matte-card::after {
+        transition: none !important;
+      }
+      .pill-btn, .modal-backdrop, .modal-panel, .modal-close, .modal-swap {
         transition: none !important;
         transform: none !important;
         filter: none !important;
@@ -691,15 +754,15 @@
     <div class="modal-panel">
       <div class="modal-head">
         <div>
-          <div class="modal-kicker" id="modalDate"></div>
-          <h3 class="modal-title" id="modalTitle"></h3>
+          <div class="modal-kicker modal-swap" id="modalDate"></div>
+          <h3 class="modal-title modal-swap" id="modalTitle"></h3>
         </div>
         <button type="button" class="modal-close" id="modalClose" aria-label="Закрыть">&times;</button>
       </div>
-      <div class="modal-meta-row" id="modalBadges"></div>
+      <div class="modal-meta-row modal-swap" id="modalBadges"></div>
       <div class="modal-section">
         <div class="modal-label">Краткий результат</div>
-        <p id="modalSummary"></p>
+        <p class="modal-swap" id="modalSummary"></p>
       </div>
       <div class="modal-nav">
         <button type="button" class="pill-btn" id="modalPrev">‹ Назад</button>
@@ -1030,13 +1093,12 @@
       return filtered.length ? filtered : allEvents;
     }
 
-    function openDetail(id) {
-      const ev = allEvents.find(x => x.id === id);
-      if (!ev) return;
-      currentModalId = id;
+    let modalSwapTimer = null;
+    let modalSwapToken = 0;
+
+    function applyModalContent(ev) {
       const au = authorsMeta[ev.author];
       const st = statusMeta[ev.status];
-
       document.getElementById("modalDate").textContent = `${ev.date} · ${ev.kind}`;
       document.getElementById("modalTitle").textContent = ev.title;
       document.getElementById("modalBadges").innerHTML = `
@@ -1044,15 +1106,51 @@
         <span class="status-text"><span class="${st.cls}">${st.icon}</span> ${st.text}</span>
       `;
       document.getElementById("modalSummary").textContent = ev.summary;
+    }
 
+    function syncModalNav(id) {
       const pool = getNavPool();
       const idx = pool.findIndex(x => x.id === id);
       document.getElementById("modalPrev").disabled = idx <= 0;
       document.getElementById("modalNext").disabled = idx < 0 || idx >= pool.length - 1;
-      document.getElementById("detailModal").classList.add("open");
+    }
+
+    function openDetail(id) {
+      const ev = allEvents.find(x => x.id === id);
+      if (!ev) return;
+
+      const modal = document.getElementById("detailModal");
+      const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const shouldSwapFade = modal.classList.contains("open") && currentModalId !== null && currentModalId !== id && !reduced;
+
+      currentModalId = id;
+      syncModalNav(id);
+      clearTimeout(modalSwapTimer);
+      const token = ++modalSwapToken;
+      const swapEls = modal.querySelectorAll(".modal-swap");
+
+      if (!shouldSwapFade) {
+        swapEls.forEach(el => el.classList.remove("is-swapping"));
+        applyModalContent(ev);
+        modal.classList.add("open");
+        return;
+      }
+
+      swapEls.forEach(el => el.classList.add("is-swapping"));
+      modalSwapTimer = setTimeout(() => {
+        if (token !== modalSwapToken) return;
+        applyModalContent(ev);
+        requestAnimationFrame(() => {
+          if (token !== modalSwapToken) return;
+          swapEls.forEach(el => el.classList.remove("is-swapping"));
+        });
+      }, 155);
     }
 
     function closeDetail() {
+      clearTimeout(modalSwapTimer);
+      modalSwapToken++;
+      document.querySelectorAll("#detailModal .modal-swap").forEach(el => el.classList.remove("is-swapping"));
       document.getElementById("detailModal").classList.remove("open");
       currentModalId = null;
     }
@@ -1092,6 +1190,28 @@
     document.addEventListener("keydown", e => {
       if (e.key === "Escape") closeDetail();
     });
+
+    let spotlightCard = null;
+    let spotlightX = 0;
+    let spotlightY = 0;
+    let spotlightRaf = 0;
+
+    document.addEventListener("pointermove", e => {
+      if (e.pointerType === "touch") return;
+      const card = e.target.closest(".matte-card");
+      if (!card) return;
+      const rect = card.getBoundingClientRect();
+      spotlightCard = card;
+      spotlightX = Math.round(e.clientX - rect.left);
+      spotlightY = Math.round(e.clientY - rect.top);
+      if (spotlightRaf) return;
+      spotlightRaf = requestAnimationFrame(() => {
+        spotlightRaf = 0;
+        if (!spotlightCard) return;
+        spotlightCard.style.setProperty("--mx", spotlightX + "px");
+        spotlightCard.style.setProperty("--my", spotlightY + "px");
+      });
+    }, { passive: true });
     window.addEventListener("scroll", flushCardsAboveFold, { passive: true });
     window.addEventListener("resize", flushCardsAboveFold, { passive: true });
     window.addEventListener("beforeprint", () => {
